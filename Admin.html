@@ -2,187 +2,376 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Noople Waitlist Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noople Admin</title>
 
-
-
-  <body>
-
-  <h1>Waitlist</h1>
-
-  <table>
-    <thead>
-      <tr>
-        <th>No.</th>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Party</th>
-        <th>Time</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-
-    <tbody id="tableBody"></tbody>
-  </table>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-  <script>
-    const SUPABASE_URL = "https://fzhullhosgqpxbzwxkty.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_AGdowA9kUYZMs-0H9gQoiA_Jinw7dKy";
-
-    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const tableBody = document.getElementById("tableBody");
-
-    // 本地状态（不存数据库）
-    let statusMap = {};
-
-    function formatTime(time) {
-      const utcTime = time.endsWith("Z") ? time : time + "Z";
-      const date = new Date(utcTime);
-
-      return date.toLocaleTimeString("en-CA", {
-        timeZone: "America/Vancouver",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true
-      });
-    }
-
-    async function loadData() {
-      const { data, error } = await client
-        .from("Waitlist")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.log(error);
-        return;
-      }
-
-      tableBody.innerHTML = "";
-
-      data.forEach((item, index) => {
-        const status = statusMap[item.id] || "";
-        const rowClass = status;
-
-        const row = `
-          <tr class="${rowClass}">
-            <td>${index + 1}</td>
-            <td>${item.name}</td>
-            <td>${item.phone}</td>
-            <td>${item.party_size}</td>
-            <td>${formatTime(item.created_at)}</td>
-            <td>
-              <button class="btn-checked" onclick="setChecked('${item.id}')">Checked</button>
-              <button class="btn-wait" onclick="setWait('${item.id}')">Wait</button>
-              <button class="btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
-            </td>
-          </tr>
-        `;
-
-        tableBody.innerHTML += row;
-      });
-    }
-
-    function setWait(id) {
-      statusMap[id] = "wait";
-      loadData();
-    }
-
-    function setChecked(id) {
-      statusMap[id] = "checked";
-      loadData();
-    }
-
-    async function deleteItem(id) {
-      if (!confirm("Remove this customer?")) return;
-
-      const { error } = await client
-        .from("Waitlist")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        alert("Delete failed");
-        return;
-      }
-
-      delete statusMap[id];
-      loadData();
-    }
-
-    loadData();
-    setInterval(loadData, 5000);
-  </script>
-
-</body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body {
-      font-family: Arial;
+      margin: 0;
+      font-family: Arial, sans-serif;
       background: #f5f5f5;
-      padding: 20px;
+      color: #111;
+    }
+
+    .login-box {
+      width: 340px;
+      margin: 120px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .login-box h2 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 4px;
+      font-size: 15px;
+    }
+
+    .login-btn {
+      width: 100%;
+      background: #111;
+      color: white;
+      margin-top: 12px;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 25px auto;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 20px;
+      font-size: 34px;
+      margin: 0;
+    }
+
+    .refresh-btn {
+      background: #eee;
+      color: #111;
+    }
+
+    .logout-btn {
+      background: #111;
+      color: white;
+    }
+
+    .date-info {
+      margin-bottom: 18px;
+      font-size: 16px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
-      border-radius: 10px;
+      border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      table-layout: fixed;
     }
 
     th, td {
-      padding: 14px;
+      padding: 15px 12px;
       border-bottom: 1px solid #eee;
       text-align: center;
+      vertical-align: middle;
+      font-size: 16px;
     }
 
     th {
-      background: black;
-      color: white;
-    }
-
-    tr.wait {
-      background-color: #fff3cd;
+      background: #f8f8f8;
+      font-weight: bold;
     }
 
     tr.checked {
-      background-color: #d4edda;
+      background: #dff5e5;
     }
 
-    button {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 2px;
+    tr.wait {
+      background: #fff4c2;
     }
 
-    .btn-wait {
-      background: #f1c40f;
-      color: black;
+    .wait-btn {
+      background: #f4c542;
+      color: #111;
     }
 
-    .btn-checked {
-      background: #2ecc71;
+    .checked-btn {
+      background: #35a853;
       color: white;
     }
 
-    .btn-delete {
-      background: red;
-      color: white;
+    .empty {
+      text-align: center;
+      padding: 35px;
+      background: white;
+      border-radius: 12px;
+      color: #777;
+      font-size: 18px;
     }
 
+    .error {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      color: red;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 24px;
+      }
+
+      th, td {
+        font-size: 12px;
+        padding: 9px 5px;
+      }
+
+      button {
+        font-size: 12px;
+        padding: 8px 9px;
+      }
+    }
   </style>
 </head>
 
+<body>
+  <div id="app"></div>
 
+  <script>
+    const SUPABASE_URL = "https://fzhullhosgqpxbzwxkty.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_AGdowA9kUYZMs-0H9gQoiA_Jinw7dKy";
+    const TABLE_NAME = "Waitlist";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    async function checkLogin() {
+      const { data, error } = await supabaseClient.auth.getUser();
+
+      if (error) {
+        console.error(error);
+        showLogin();
+        return;
+      }
+
+      if (data.user) {
+        showAdmin();
+        loadData();
+      } else {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById("app").innerHTML = `
+        <div class="login-box">
+          <h2>Admin Login</h2>
+          <input id="email" type="email" placeholder="Email">
+          <input id="password" type="password" placeholder="Password">
+          <button class="login-btn" onclick="login()">Login</button>
+        </div>
+      `;
+    }
+
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) {
+        alert("Please enter email and password.");
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) {
+        alert("Login failed. Please check email and password.");
+        console.error(error);
+        return;
+      }
+
+      showAdmin();
+      loadData();
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      location.reload();
+    }
+
+    function showAdmin() {
+      document.getElementById("app").innerHTML = `
+        <div class="container">
+          <div class="top-bar">
+            <h1>Noople Admin</h1>
+            <div>
+              <button class="refresh-btn" onclick="loadData()">Refresh</button>
+              <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+          </div>
+
+          <div class="date-info" id="dateInfo"></div>
+          <div id="tableArea"></div>
+        </div>
+      `;
+    }
+
+    function formatLocalTime(timeString) {
+      if (!timeString) return "";
+
+      let fixedTime = timeString;
+
+      if (!fixedTime.endsWith("Z")) {
+        fixedTime = fixedTime + "Z";
+      }
+
+      const date = new Date(fixedTime);
+
+      return date.toLocaleString("en-CA", {
+        timeZone: "America/Vancouver",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    }
+
+    function getVancouverTodayText() {
+      const now = new Date();
+
+      return now.toLocaleDateString("en-CA", {
+        timeZone: "America/Vancouver",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+    }
+
+    async function loadData() {
+      document.getElementById("dateInfo").innerText =
+        "Showing waitlist: " + getVancouverTodayText();
+
+      const { data, error } = await supabaseClient
+        .from(TABLE_NAME)
+        .select("id, name, phone, party_size, created_at")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        document.getElementById("tableArea").innerHTML = `
+          <div class="error">
+            Load failed. Please check Supabase table name or RLS policy.
+          </div>
+        `;
+        console.error(error);
+        return;
+      }
+
+      renderTable(data || []);
+    }
+
+    function renderTable(list) {
+      if (!list || list.length === 0) {
+        document.getElementById("tableArea").innerHTML = `
+          <div class="empty">No data.</div>
+        `;
+        return;
+      }
+
+      let rows = "";
+
+      list.forEach((item, index) => {
+        rows += `
+          <tr id="row-${item.id}">
+            <td>${index + 1}</td>
+            <td>${item.name || ""}</td>
+            <td>${item.phone || ""}</td>
+            <td>${item.party_size || ""}</td>
+            <td>${formatLocalTime(item.created_at)}</td>
+            <td>
+              <button class="wait-btn" onclick="markWait('${item.id}')">Wait</button>
+              <button class="checked-btn" onclick="markChecked('${item.id}')">Checked</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("tableArea").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Party Size</th>
+              <th>Created Time</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function markWait(id) {
+      const row = document.getElementById("row-" + id);
+      if (!row) return;
+
+      row.classList.remove("checked");
+      row.classList.add("wait");
+    }
+
+    function markChecked(id) {
+      const row = document.getElementById("row-" + id);
+      if (!row) return;
+
+      row.classList.remove("wait");
+      row.classList.add("checked");
+    }
+
+    checkLogin();
+  </script>
+</body>
 </html>
