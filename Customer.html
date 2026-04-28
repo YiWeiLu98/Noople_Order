@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Noople Waitlist</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f7f3ee;
+      color: #2b2b2b;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .card {
+      background-color: white;
+      padding: 28px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 15px;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      margin-bottom: 18px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      background-color: #2b2b2b;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:active {
+      opacity: 0.85;
+    }
+
+    .success {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      background-color: #e8f6ec;
+      color: #237a3b;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .note {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #777;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Join the Waitlist</h1>
+      <p class="subtitle">Please enter your information below.</p>
+
+      <form id="waitlistForm">
+        <label for="name">Name</label>
+        <input type="text" id="name" placeholder="Your name" required />
+
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="Your phone number" required />
+
+        <label for="partySize">Party Size</label>
+        <input type="number" id="partySize" placeholder="Number of guests" min="1" required />
+
+        <button type="submit">Submit</button>
+      </form>
+
+      <div class="success" id="successMessage">
+        Thank you! You have joined the waitlist.
+      </div>
+
+      <p class="note">
+        Our staff will call you when your table is ready.
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://fzhullhosgqpxbzwxkty.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_AGdowA9kUYZMs-0H9gQoiA_Jinw7dKy";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const form = document.getElementById("waitlistForm");
+    const successMessage = document.getElementById("successMessage");
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+      const partySize = document.getElementById("partySize").value;
+
+      const { error } = await client
+        .from("Waitlist")
+        .insert([
+          {
+            name: name,
+            phone: phone,
+            party_size: partySize
+          }
+        ]);
+
+      if (error) {
+        alert("Submit failed. Please try again.");
+        console.log(error);
+        return;
+      }
+
+      successMessage.style.display = "block";
+      form.reset();
+    });
+  </script>
+</body>
+</html>

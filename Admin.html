@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Noople Waitlist Admin</title>
+
+
+
+  <body>
+
+  <h1>Waitlist</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Party</th>
+        <th>Time</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://fzhullhosgqpxbzwxkty.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_AGdowA9kUYZMs-0H9gQoiA_Jinw7dKy";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const tableBody = document.getElementById("tableBody");
+
+    // 本地状态（不存数据库）
+    let statusMap = {};
+
+    function formatTime(time) {
+      const utcTime = time.endsWith("Z") ? time : time + "Z";
+      const date = new Date(utcTime);
+
+      return date.toLocaleTimeString("en-CA", {
+        timeZone: "America/Vancouver",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      });
+    }
+
+    async function loadData() {
+      const { data, error } = await client
+        .from("Waitlist")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      tableBody.innerHTML = "";
+
+      data.forEach((item, index) => {
+        const status = statusMap[item.id] || "";
+        const rowClass = status;
+
+        const row = `
+          <tr class="${rowClass}">
+            <td>${index + 1}</td>
+            <td>${item.name}</td>
+            <td>${item.phone}</td>
+            <td>${item.party_size}</td>
+            <td>${formatTime(item.created_at)}</td>
+            <td>
+              <button class="btn-checked" onclick="setChecked('${item.id}')">Checked</button>
+              <button class="btn-wait" onclick="setWait('${item.id}')">Wait</button>
+              <button class="btn-delete" onclick="deleteItem('${item.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+
+        tableBody.innerHTML += row;
+      });
+    }
+
+    function setWait(id) {
+      statusMap[id] = "wait";
+      loadData();
+    }
+
+    function setChecked(id) {
+      statusMap[id] = "checked";
+      loadData();
+    }
+
+    async function deleteItem(id) {
+      if (!confirm("Remove this customer?")) return;
+
+      const { error } = await client
+        .from("Waitlist")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        alert("Delete failed");
+        return;
+      }
+
+      delete statusMap[id];
+      loadData();
+    }
+
+    loadData();
+    setInterval(loadData, 5000);
+  </script>
+
+</body>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 14px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+    }
+
+    th {
+      background: black;
+      color: white;
+    }
+
+    tr.wait {
+      background-color: #fff3cd;
+    }
+
+    tr.checked {
+      background-color: #d4edda;
+    }
+
+    button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 2px;
+    }
+
+    .btn-wait {
+      background: #f1c40f;
+      color: black;
+    }
+
+    .btn-checked {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .btn-delete {
+      background: red;
+      color: white;
+    }
+
+  </style>
+</head>
+
+
+</html>
