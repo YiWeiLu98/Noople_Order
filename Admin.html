@@ -185,6 +185,11 @@
         font-size: 12px;
         padding: 8px 9px;
       }
+
+      #datePicker {
+        font-size: 12px;
+        padding: 8px 9px;
+      }
     }
   </style>
 </head>
@@ -336,7 +341,7 @@
 
       const { data, error } = await supabaseClient
         .from(TABLE_NAME)
-        .select("id, name, phone, party_size, created_at")
+        .select("id, name, phone, party_size, created_at, status")
         .gte("created_at", startTime)
         .lt("created_at", endTime)
         .order("created_at", { ascending: true });
@@ -344,7 +349,7 @@
       if (error) {
         document.getElementById("tableArea").innerHTML = `
           <div class="error">
-            Load failed. Please check Supabase table name or RLS policy.
+            Load failed. Please check Supabase table name, status column, or RLS policy.
           </div>
         `;
         console.error(error);
@@ -366,7 +371,7 @@
 
       list.forEach((item, index) => {
         rows += `
-          <tr id="row-${item.id}">
+          <tr id="row-${item.id}" class="${item.status || ""}">
             <td>${index + 1}</td>
             <td>${item.name || ""}</td>
             <td>${item.phone || ""}</td>
@@ -399,20 +404,34 @@
       `;
     }
 
-    function markWait(id) {
-      const row = document.getElementById("row-" + id);
-      if (!row) return;
+    async function markWait(id) {
+      const { error } = await supabaseClient
+        .from(TABLE_NAME)
+        .update({ status: "wait" })
+        .eq("id", id);
 
-      row.classList.remove("checked");
-      row.classList.add("wait");
+      if (error) {
+        alert("Update failed.");
+        console.error(error);
+        return;
+      }
+
+      loadData();
     }
 
-    function markChecked(id) {
-      const row = document.getElementById("row-" + id);
-      if (!row) return;
+    async function markChecked(id) {
+      const { error } = await supabaseClient
+        .from(TABLE_NAME)
+        .update({ status: "checked" })
+        .eq("id", id);
 
-      row.classList.remove("wait");
-      row.classList.add("checked");
+      if (error) {
+        alert("Update failed.");
+        console.error(error);
+        return;
+      }
+
+      loadData();
     }
 
     checkLogin();
