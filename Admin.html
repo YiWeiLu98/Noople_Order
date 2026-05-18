@@ -76,19 +76,40 @@
       margin: 0;
     }
 
-    .refresh-btn {
-      background: #eee;
-      color: #111;
-    }
-
     .logout-btn {
       background: #111;
       color: white;
     }
 
-    .date-info {
+    .date-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 18px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .date-info {
       font-size: 16px;
+    }
+
+    #datePicker {
+      width: auto;
+      background: #111;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 4px;
+    }
+
+    #datePicker::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
     }
 
     table {
@@ -244,12 +265,20 @@
           <div class="top-bar">
             <h1>Noople Admin</h1>
             <div>
-              <button class="refresh-btn" onclick="loadData()">Refresh</button>
               <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
           </div>
 
-          <div class="date-info" id="dateInfo"></div>
+          <div class="date-bar">
+            <div class="date-info" id="dateInfo"></div>
+
+            <input
+              type="date"
+              id="datePicker"
+              onchange="loadData()"
+            />
+          </div>
+
           <div id="tableArea"></div>
         </div>
       `;
@@ -289,12 +318,27 @@
     }
 
     async function loadData() {
+      const picker = document.getElementById("datePicker");
+
+      if (picker && !picker.value) {
+        picker.value = getVancouverTodayText();
+      }
+
+      const selectedDate = picker
+        ? picker.value
+        : getVancouverTodayText();
+
       document.getElementById("dateInfo").innerText =
-        "Showing waitlist: " + getVancouverTodayText();
+        "Showing waitlist: " + selectedDate;
+
+      const startTime = selectedDate + "T00:00:00";
+      const endTime = selectedDate + "T23:59:59";
 
       const { data, error } = await supabaseClient
         .from(TABLE_NAME)
         .select("id, name, phone, party_size, created_at")
+        .gte("created_at", startTime)
+        .lt("created_at", endTime)
         .order("created_at", { ascending: true });
 
       if (error) {
